@@ -35,6 +35,7 @@ logs/
 *.log
 .venv
 mcp.db
+data/
 public/
 ica_integrations_host.sbom.json
 .pyre

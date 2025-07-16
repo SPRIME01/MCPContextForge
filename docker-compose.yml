@@ -2,12 +2,16 @@
 #  NETWORKS + VOLUMES - declared first so they can be referenced later
 ###############################################################################
 networks:
-  mcpnet:               # Single user-defined bridge network keeps traffic private
+  # Single user-defined bridge network keeps traffic private
+  mcpnet:
     driver: bridge
 
-volumes:                # Named volumes survive podman-compose down/up
-  redis_data:              # Keep Redis data volume
-  redisinsight_data:       # Keep Redis Insight data volume
+ # Named volumes survive podman-compose down/up
+volumes:
+  # Keep Redis data volume
+  redis_data:
+  # Keep Redis Insight data volume
+  redisinsight_data:
 
 ###############################################################################
 #  CORE SERVICE - MCP Gateway
@@ -19,6 +23,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────
   gateway:
     # Use the official image instead of non-existent local one
+    user: "1001:0"
     image: ghcr.io/ibm/mcp-context-forge:0.3.0
     # Comment out the build section since we're using pre-built image
     # build:
@@ -26,18 +31,23 @@ services:
     #   dockerfile: Containerfile
     restart: unless-stopped
     ports:
-      - "4444:4444"                 # HTTP (or HTTPS if SSL=true is set)
+      # HTTP (or HTTPS if SSL=true is set)
+      - "4444:4444"
     networks: [mcpnet]
 
     # More aggressive Surface Pro 6 RAM optimization
     deploy:
       resources:
         limits:
-          memory: 512M      # Reduced from 1G
-          cpus: '1.0'       # Reduced from 2.0
+          # Reduced from 1G
+          memory: 512M
+          # Reduced from 2.0
+          cpus: '1.0'
         reservations:
-          memory: 256M      # Reduced from 512M
-          cpus: '0.5'       # Reduced from 1.0
+          # Reduced from 512M
+          memory: 256M
+          # Reduced from 1.0
+          cpus: '0.5'
 
     # Use .env file for all environment variables
     env_file:
@@ -55,8 +65,10 @@ services:
 
     # Use volume mount for database persistence
     volumes:
-      - ./data:/app/data      # Mount data directory
-      - ./logs:/app/logs      # Optional: for log persistence
+      # Mount data directory
+      - ./data:/app/data      
+      # Optional: for log persistence
+      - ./logs:/app/logs      
 
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4444/health')"]
@@ -78,7 +90,8 @@ services:
 
   # Optimize Redis for Surface Pro 6
   redis:
-    image: redis:7-alpine      # Use Alpine for smaller memory footprint
+    # Use Alpine for smaller memory footprint
+    image: redis:7-alpine      
     ports:
       - "6379:6379"
     networks: [mcpnet]
@@ -87,16 +100,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M       # Limit Redis to 256MB
-          cpus: '0.5'        # Limit to 0.5 CPU cores
+        # Limit Redis to 256MB
+          memory: 256M  
+        # Limit to 0.5 CPU cores     
+          cpus: '0.5'       
         reservations:
-          memory: 128M       # Reserve minimum 128MB
+          # Reserve minimum 128MB
+          memory: 128M       
     
     # Redis configuration for low memory usage
     command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru --save ""
     
     # Optional: persist Redis data
     volumes:
+      # Keep Redis data volume
       - redis_data:/data
 
   # Comment out pgadmin since not using PostgreSQL
@@ -116,15 +133,19 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M       # Limit Redis Insight to 256MB
-          cpus: '0.5'        # Limit to 0.5 CPU cores
+        # Limit Redis Insight to 256MB
+          memory: 256M 
+        # Limit to 0.5 CPU cores      
+          cpus: '0.5'        
     
     depends_on:
       redis:
         condition: service_started
     volumes:
+      # Keep Redis Insight data volume
       - redisinsight_data:/data
     environment:
+      # Redis Insight environment variables
       - RI_REDIS_HOST=redis
       - RI_REDIS_PORT=6379
       - RI_REDIS_USERNAME=default
@@ -155,18 +176,18 @@ services:
     
     # Set working directory
     working_dir: /app
-    
+
     # Resource limits for Surface Pro 6
     deploy:
       resources:
         limits:
           memory: 128M
           cpus: '0.25'
-    
+
     # Run after gateway is up
     depends_on:
       gateway:
         condition: service_healthy
-    
-    # Restart policy
-    restart: "no"  # Run once on startup
+
+    # Restart policy (run once on startup)
+    restart: "no"
