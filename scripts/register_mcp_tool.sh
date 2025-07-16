@@ -50,6 +50,15 @@ check_auth() {
     fi
 }
 
+# Function to load environment variables from .env file
+load_env() {
+    if [ -f .env ]; then
+        export $(grep -E '^MCP_ADMIN_USERNAME=' .env | xargs) 2>/dev/null || true
+        export $(grep -E '^MCP_ADMIN_PASSWORD=' .env | xargs) 2>/dev/null || true
+        export $(grep -E '^MCP_GATEWAY_URL=' .env | xargs) 2>/dev/null || true
+    fi
+}
+
 # Function to validate URL
 validate_url() {
     local url="$1"
@@ -179,9 +188,15 @@ main() {
     echo "================================"
     echo ""
     
+    # Load environment variables from .env file
+    load_env
+    
     # Check prerequisites
     check_curl
     check_auth
+    
+    # Set MCP_GATEWAY_URL to default if not set
+    MCP_GATEWAY_URL="${MCP_GATEWAY_URL:-http://127.0.0.1:4444}"
     
     print_info "MCP Gateway URL: $MCP_GATEWAY_URL"
     echo ""

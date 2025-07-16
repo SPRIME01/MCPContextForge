@@ -296,16 +296,28 @@ doctest-check:
 # Default MCP Gateway endpoint (override with MCP_GATEWAY_URL)
 MCP_GATEWAY_URL ?= http://127.0.0.1:4444
 
+# Function to load environment variables from .env file
+define load_env
+	$(eval include .env)
+	$(eval export)
+endef
+
 .PHONY: mcp-register-tool mcp-register-tool-cli mcp-auth mcp-list-tools
 
 mcp-auth:
 	@echo "🔐 Authenticating with MCP Gateway Admin..."
-	@if [ -z "$(MCP_ADMIN_USERNAME)" ] || [ -z "$(MCP_ADMIN_PASSWORD)" ]; then \
+	@if [ -f .env ]; then \
+		export $$(grep -E '^MCP_ADMIN_USERNAME=' .env | xargs) && \
+		export $$(grep -E '^MCP_ADMIN_PASSWORD=' .env | xargs) && \
+		export $$(grep -E '^MCP_GATEWAY_URL=' .env | xargs) || true; \
+	fi; \
+	if [ -z "$$MCP_ADMIN_USERNAME" ] || [ -z "$$MCP_ADMIN_PASSWORD" ]; then \
 		echo "❌ Error: MCP_ADMIN_USERNAME and MCP_ADMIN_PASSWORD must be set"; \
 		echo "💡 Set them as environment variables or in your .env file"; \
 		exit 1; \
-	fi
-	@curl -c cookie.txt -u "$(MCP_ADMIN_USERNAME):$(MCP_ADMIN_PASSWORD)" "$(MCP_GATEWAY_URL)/admin/" && \
+	fi; \
+	MCP_GATEWAY_URL=$${MCP_GATEWAY_URL:-http://127.0.0.1:4444}; \
+	curl -c cookie.txt -u "$$MCP_ADMIN_USERNAME:$$MCP_ADMIN_PASSWORD" "$$MCP_GATEWAY_URL/admin/" && \
 	echo "✅ Authentication successful. Cookie saved to cookie.txt"
 
 mcp-list-tools:
@@ -313,8 +325,12 @@ mcp-list-tools:
 	@if [ ! -f cookie.txt ]; then \
 		echo "❌ No authentication cookie found. Run 'make mcp-auth' first."; \
 		exit 1; \
-	fi
-	@curl -s -b cookie.txt "$(MCP_GATEWAY_URL)/admin/tools/" | \
+	fi; \
+	if [ -f .env ]; then \
+		export $$(grep -E '^MCP_GATEWAY_URL=' .env | xargs) || true; \
+	fi; \
+	MCP_GATEWAY_URL=$${MCP_GATEWAY_URL:-http://127.0.0.1:4444}; \
+	curl -s -b cookie.txt "$$MCP_GATEWAY_URL/admin/tools" | \
 	python3 -m json.tool 2>/dev/null || \
 	echo "❌ Failed to retrieve tools list. Check your authentication."
 
