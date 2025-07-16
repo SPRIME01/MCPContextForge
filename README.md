@@ -1841,7 +1841,12 @@ test                 - Run unit tests with pytest
 test-curl            - Smoke-test API endpoints with curl script
 pytest-examples      - Run README / examples through pytest-examples
 clean                - Remove caches, build artefacts, virtualenv, docs, certs, coverage, SBOM, etc.
-📊 COVERAGE & METRICS
+� MCP ADMIN
+mcp-register-tool    - Register external MCP server as a tool (interactive)
+mcp-register-tool-cli - Register tool with CLI args: NAME=name URL=url DESC=desc
+mcp-auth             - Authenticate with MCP Gateway admin (creates cookie.txt)
+mcp-list-tools       - List all registered tools in the MCP Gateway
+�📊 COVERAGE & METRICS
 coverage             - Run tests with coverage, emit md/HTML/XML + badge
 pip-licenses         - Produce dependency license inventory (markdown)
 scc                  - Quick LoC/complexity snapshot with scc

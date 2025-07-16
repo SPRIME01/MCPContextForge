@@ -285,7 +285,54 @@ doctest-check:
 		echo '✅ All doctests passing' || (echo '❌ Doctest failures detected' && exit 1)"
 
 # =============================================================================
-# 📊 METRICS
+# � MCP ADMIN
+# =============================================================================
+# help: 🔧 MCP ADMIN
+# help: mcp-register-tool    - Register external MCP server as a tool (interactive)
+# help: mcp-register-tool-cli - Register tool with CLI args: NAME=name URL=url DESC=desc
+# help: mcp-auth             - Authenticate with MCP Gateway admin (creates cookie.txt)
+# help: mcp-list-tools       - List all registered tools in the MCP Gateway
+
+# Default MCP Gateway endpoint (override with MCP_GATEWAY_URL)
+MCP_GATEWAY_URL ?= http://127.0.0.1:4444
+
+.PHONY: mcp-register-tool mcp-register-tool-cli mcp-auth mcp-list-tools
+
+mcp-auth:
+	@echo "🔐 Authenticating with MCP Gateway Admin..."
+	@if [ -z "$(MCP_ADMIN_USERNAME)" ] || [ -z "$(MCP_ADMIN_PASSWORD)" ]; then \
+		echo "❌ Error: MCP_ADMIN_USERNAME and MCP_ADMIN_PASSWORD must be set"; \
+		echo "💡 Set them as environment variables or in your .env file"; \
+		exit 1; \
+	fi
+	@curl -c cookie.txt -u "$(MCP_ADMIN_USERNAME):$(MCP_ADMIN_PASSWORD)" "$(MCP_GATEWAY_URL)/admin/" && \
+	echo "✅ Authentication successful. Cookie saved to cookie.txt"
+
+mcp-list-tools:
+	@echo "📋 Listing registered tools..."
+	@if [ ! -f cookie.txt ]; then \
+		echo "❌ No authentication cookie found. Run 'make mcp-auth' first."; \
+		exit 1; \
+	fi
+	@curl -s -b cookie.txt "$(MCP_GATEWAY_URL)/admin/tools/" | \
+	python3 -m json.tool 2>/dev/null || \
+	echo "❌ Failed to retrieve tools list. Check your authentication."
+
+mcp-register-tool:
+	@./scripts/register_mcp_tool.sh
+
+# Alternative: Register tool with command line arguments
+# Usage: make mcp-register-tool-cli NAME=my_tool URL="https://..." DESC="..."
+mcp-register-tool-cli:
+	@if [ -z "$(NAME)" ] || [ -z "$(URL)" ]; then \
+		echo "❌ Error: NAME and URL are required"; \
+		echo "💡 Usage: make mcp-register-tool-cli NAME=my_tool URL='https://...' DESC='...'"; \
+		exit 1; \
+	fi
+	@./scripts/register_mcp_tool.sh --name "$(NAME)" --url "$(URL)" --description "$(DESC)"
+
+# =============================================================================
+# �📊 METRICS
 # =============================================================================
 # help: 📊 METRICS
 # help: pip-licenses         - Produce dependency license inventory (markdown)

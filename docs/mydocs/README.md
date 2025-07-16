@@ -18,6 +18,12 @@ Welcome to the MCP Context Forge documentation! This directory contains comprehe
   - Database access errors
   - Step-by-step fixes
 
+- **[Server Connection Troubleshooting](./server-connection-troubleshooting.md)** - Fix external MCP server connection issues
+  - Common connection errors (502, 524, 406)
+  - Network troubleshooting
+  - Server testing methods
+  - Configuration validation
+
 ### 🗃️ Database Management
 - **[Database Management and Maintenance](./database-management.md)** - Comprehensive database operations guide
   - Backup and recovery procedures

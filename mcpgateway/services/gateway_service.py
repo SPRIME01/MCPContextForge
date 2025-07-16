@@ -934,7 +934,39 @@ class GatewayService:
 
             return capabilities, tools
         except Exception as e:
-            raise GatewayConnectionError(f"Failed to initialize gateway at {url}: {str(e)}")
+            # Handle different types of connection errors with more specific messages
+            import httpx
+            if isinstance(e, ExceptionGroup):
+                # Extract the actual exception from the ExceptionGroup
+                for exc in e.exceptions:
+                    if isinstance(exc, httpx.HTTPStatusError):
+                        if exc.response.status_code == 502:
+                            raise GatewayConnectionError(f"External MCP server at {url} is currently unavailable (502 Bad Gateway). Please try again later or contact the server administrator.")
+                        elif exc.response.status_code == 524:
+                            raise GatewayConnectionError(f"External MCP server at {url} timed out (524 Gateway Timeout). The server may be overloaded or experiencing issues.")
+                        elif exc.response.status_code == 406:
+                            raise GatewayConnectionError(f"External MCP server at {url} returned 406 Not Acceptable. This may indicate a transport protocol mismatch.")
+                        else:
+                            raise GatewayConnectionError(f"External MCP server at {url} returned HTTP {exc.response.status_code}: {exc.response.reason_phrase}")
+                    elif isinstance(exc, httpx.ConnectError):
+                        raise GatewayConnectionError(f"Cannot connect to external MCP server at {url}. Please check the URL and network connectivity.")
+                    elif isinstance(exc, httpx.TimeoutException):
+                        raise GatewayConnectionError(f"Connection to external MCP server at {url} timed out. The server may be slow or unreachable.")
+            elif isinstance(e, httpx.HTTPStatusError):
+                if e.response.status_code == 502:
+                    raise GatewayConnectionError(f"External MCP server at {url} is currently unavailable (502 Bad Gateway). Please try again later or contact the server administrator.")
+                elif e.response.status_code == 524:
+                    raise GatewayConnectionError(f"External MCP server at {url} timed out (524 Gateway Timeout). The server may be overloaded or experiencing issues.")
+                elif e.response.status_code == 406:
+                    raise GatewayConnectionError(f"External MCP server at {url} returned 406 Not Acceptable. This may indicate a transport protocol mismatch.")
+                else:
+                    raise GatewayConnectionError(f"External MCP server at {url} returned HTTP {e.response.status_code}: {e.response.reason_phrase}")
+            elif isinstance(e, httpx.ConnectError):
+                raise GatewayConnectionError(f"Cannot connect to external MCP server at {url}. Please check the URL and network connectivity.")
+            elif isinstance(e, httpx.TimeoutException):
+                raise GatewayConnectionError(f"Connection to external MCP server at {url} timed out. The server may be slow or unreachable.")
+            else:
+                raise GatewayConnectionError(f"Failed to initialize gateway at {url}: {str(e)}")
 
     def _get_gateways(self, include_inactive: bool = True) -> list[DbGateway]:
         """Sync function for database operations (runs in thread).
