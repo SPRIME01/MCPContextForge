@@ -292,6 +292,9 @@ doctest-check:
 # help: mcp-register-tool-cli - Register tool with CLI args: NAME=name URL=url DESC=desc
 # help: mcp-auth             - Authenticate with MCP Gateway admin (creates cookie.txt)
 # help: mcp-list-tools       - List all registered tools in the MCP Gateway
+# help: setup-vscode         - Set up VS Code MCP integration with stdio bridge
+# help: test-vscode          - Test VS Code integration setup
+# help: generate-jwt          - Generate a JWT token for MCP authentication
 
 # Default MCP Gateway endpoint (override with MCP_GATEWAY_URL)
 MCP_GATEWAY_URL ?= http://127.0.0.1:4444
@@ -302,7 +305,19 @@ define load_env
 	$(eval export)
 endef
 
-.PHONY: mcp-register-tool mcp-register-tool-cli mcp-auth mcp-list-tools
+.PHONY: mcp-register-tool mcp-register-tool-cli mcp-auth mcp-list-tools setup-vscode test-vscode generate-jwt
+
+generate-jwt:
+	@echo "🔑 Generating JWT token for MCP authentication..."
+	@if [ -f .env ]; then \
+		export $$(grep -E '^JWT_SECRET_KEY=' .env | xargs) || true; \
+		export $$(grep -E '^MCP_ADMIN_USERNAME=' .env | xargs) || true; \
+	fi; \
+	JWT_SECRET_KEY=$${JWT_SECRET_KEY:-my-test-key}; \
+	MCP_ADMIN_USERNAME=$${MCP_ADMIN_USERNAME:-admin}; \
+	test -d "$(VENV_DIR)" || $(MAKE) venv; \
+	/bin/bash -c "source $(VENV_DIR)/bin/activate && \
+		python3 -m mcpgateway.utils.create_jwt_token -u $$MCP_ADMIN_USERNAME --exp 10080 --secret $$JWT_SECRET_KEY"
 
 mcp-auth:
 	@echo "🔐 Authenticating with MCP Gateway Admin..."
@@ -321,18 +336,10 @@ mcp-auth:
 	echo "✅ Authentication successful. Cookie saved to cookie.txt"
 
 mcp-list-tools:
-	@echo "📋 Listing registered tools..."
-	@if [ ! -f cookie.txt ]; then \
-		echo "❌ No authentication cookie found. Run 'make mcp-auth' first."; \
-		exit 1; \
-	fi; \
-	if [ -f .env ]; then \
-		export $$(grep -E '^MCP_GATEWAY_URL=' .env | xargs) || true; \
-	fi; \
-	MCP_GATEWAY_URL=$${MCP_GATEWAY_URL:-http://127.0.0.1:4444}; \
-	curl -s -b cookie.txt "$$MCP_GATEWAY_URL/admin/tools" | \
-	python3 -m json.tool 2>/dev/null || \
-	echo "❌ Failed to retrieve tools list. Check your authentication."
+	@echo "📋 Listing all registered MCP tools..."
+	@test -f .env || { echo "Error: .env file not found"; exit 1; }
+	@$(call load_env)
+	@./scripts/register_mcp_tool.sh list
 
 mcp-register-tool:
 	@./scripts/register_mcp_tool.sh
@@ -346,6 +353,20 @@ mcp-register-tool-cli:
 		exit 1; \
 	fi
 	@./scripts/register_mcp_tool.sh --name "$(NAME)" --url "$(URL)" --description "$(DESC)"
+
+# VS Code Integration Setup
+setup-vscode:
+	@echo "🚀 Setting up VS Code integration with MCP Gateway..."
+	@test -f .env || { echo "Error: .env file not found"; exit 1; }
+	@$(call load_env)
+	@echo "Creating stdio bridge script..."
+	@mkdir -p scripts
+	@./scripts/create_vscode_bridge.sh
+	@echo "✅ VS Code setup complete!"
+
+# Test VS Code Integration
+test-vscode:
+	@./scripts/test_vscode_integration.sh
 
 # =============================================================================
 # �📊 METRICS

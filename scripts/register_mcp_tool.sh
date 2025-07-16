@@ -125,6 +125,47 @@ register_tool() {
     fi
 }
 
+# Function to list registered tools
+list_tools() {
+    print_info "Listing registered tools..."
+    
+    # Load environment variables
+    load_env
+    
+    # Use basic auth instead of cookie-based auth
+    if [ -z "$MCP_ADMIN_USERNAME" ] || [ -z "$MCP_ADMIN_PASSWORD" ]; then
+        print_error "MCP_ADMIN_USERNAME and MCP_ADMIN_PASSWORD must be set in .env file"
+        exit 1
+    fi
+    
+    local response_file="/tmp/mcp_list_response_$$.json"
+    
+    if curl -s -u "$MCP_ADMIN_USERNAME:$MCP_ADMIN_PASSWORD" \
+        "$MCP_GATEWAY_URL/admin/tools/" \
+        -o "$response_file" \
+        -w "%{http_code}" | grep -q "^2"; then
+        
+        print_success "Tools retrieved successfully!"
+        echo ""
+        if command -v python3 &> /dev/null; then
+            python3 -m json.tool "$response_file" 2>/dev/null || cat "$response_file"
+        else
+            cat "$response_file"
+        fi
+        rm -f "$response_file"
+        return 0
+    else
+        print_error "Failed to retrieve tools list."
+        if [ -f "$response_file" ]; then
+            echo ""
+            print_info "Error details:"
+            cat "$response_file"
+            rm -f "$response_file"
+        fi
+        return 1
+    fi
+}
+
 # Function to show usage
 show_usage() {
     echo "Usage: $0 [OPTIONS]"
@@ -135,6 +176,7 @@ show_usage() {
     echo "  -u, --url         Server URL (required)"
     echo "  -d, --description Tool description (optional)"
     echo "  --gateway-url     MCP Gateway URL (default: $MCP_GATEWAY_URL)"
+    echo "  list              List all registered tools"
     echo ""
     echo "Interactive mode:"
     echo "  Run without arguments to enter interactive mode"
@@ -142,6 +184,7 @@ show_usage() {
     echo "Examples:"
     echo "  $0 -n my_tool -u 'https://server.smithery.ai/@upstash/context7-mcp/mcp?api_key=YOUR_API_KEY'"
     echo "  $0 --name weather_tool --url 'https://api.weather.com/mcp' --description 'Weather API tool'"
+    echo "  $0 list"
 }
 
 # Parse command line arguments
@@ -154,6 +197,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
             show_usage
+            exit 0
+            ;;
+        list)
+            list_tools
             exit 0
             ;;
         -n|--name)

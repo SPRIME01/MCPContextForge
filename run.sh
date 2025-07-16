@@ -84,20 +84,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate log level
-if ! [[ "$LOG_LEVEL" =~ ^(debug|info|warning|error|critical)$ ]]; then
-    echo "Invalid log level: $LOG_LEVEL"
-    echo "Must be one of: debug, info, warning, error, critical"
-    exit 1
-fi
-
-# Validate log format
-if ! [[ "$LOG_FORMAT" =~ ^(json|text)$ ]]; then
-    echo "Invalid log format: $LOG_FORMAT"
-    echo "Must be one of: json, text"
-    exit 1
-fi
-
 # Create default .env if it doesn't exist
 if [ ! -f "$ENV_FILE" ]; then
     echo "Creating default $ENV_FILE..."
@@ -160,6 +146,20 @@ if [ -f "$ENV_FILE" ]; then
     set -a
     source "$ENV_FILE"
     set +a
+fi
+
+# Validate log level
+if ! [[ "$LOG_LEVEL" =~ ^(debug|info|warning|error|critical)$ ]]; then
+    echo "Invalid log level: $LOG_LEVEL"
+    echo "Must be one of: debug, info, warning, error, critical"
+    exit 1
+fi
+
+# Validate log format
+if ! [[ "$LOG_FORMAT" =~ ^(json|text)$ ]]; then
+    echo "Invalid log format: $LOG_FORMAT"
+    echo "Must be one of: json, text"
+    exit 1
 fi
 
 # Create database directory if needed
