@@ -11,5 +11,30 @@
     "eslint-plugin-promise": "^6.6.0",
     "prettier": "^3.6.2",
     "stylelint-order": "^7.0.0"
+  },
+  "name": "mcpcontextforge",
+  "version": "1.0.0",
+  "description": "> Model Context Protocol gateway & proxy - unify REST, MCP, and A2A with federation, virtual servers, retries, security, and an optional admin UI.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SPRIME01/MCPContextForge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SPRIME01/MCPContextForge/issues"
+  },
+  "homepage": "https://github.com/SPRIME01/MCPContextForge#readme",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
   }
 }

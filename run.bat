@@ -1,0 +1,3 @@
+@echo off
+echo Starting MCP Gateway...
+python -m uvicorn mcpgateway.main:app --host 0.0.0.0 --port 4444 --workers 1
