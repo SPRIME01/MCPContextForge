@@ -35,8 +35,8 @@ class MCPStdioBridge {
   }
 
   init() {
-    // console.error('MCP Stdio Bridge starting...');
-    // console.error('Gateway URL:', MCP_GATEWAY_URL);
+    console.error('MCP Stdio Bridge starting...');
+    console.error('Gateway URL:', MCP_GATEWAY_URL);
 
     // Buffer for handling partial messages
     this.messageBuffer = '';
@@ -74,7 +74,7 @@ class MCPStdioBridge {
   handleMessage(message) {
     try {
       const parsed = JSON.parse(message);
-      // console.error('Received message:', JSON.stringify(parsed, null, 2));
+      console.error('Received message:', JSON.stringify(parsed, null, 2));
 
       // Handle 'initialize' method directly
       if (parsed.method === 'initialize') {
@@ -150,25 +150,15 @@ class MCPStdioBridge {
         const tools = await response.json();
 
         // Convert to MCP format
-        const mcpTools = tools.map(tool => {
-          // Ensure inputSchema has proper type field
-          let inputSchema = tool.inputSchema || {};
-
-          // If inputSchema is empty or doesn't have type, fix it
-          if (!inputSchema.type || Object.keys(inputSchema).length === 0) {
-            inputSchema = {
-              type: 'object',
-              properties: {},
-              required: []
-            };
+        const mcpTools = tools.map(tool => ({
+          name: tool.name,
+          description: tool.description || '',
+          inputSchema: tool.inputSchema || {
+            type: 'object',
+            properties: {},
+            required: []
           }
-
-          return {
-            name: tool.name,
-            description: tool.description || '',
-            inputSchema: inputSchema
-          };
-        });
+        }));
 
         this.sendMessage({
           jsonrpc: '2.0',

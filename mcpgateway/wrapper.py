@@ -329,12 +329,25 @@ async def handle_list_tools() -> List[types.Tool]:
         for tool in metadata:
             tool_name = tool.get("name")
             if tool_name:  # Only include tools with valid names
+                # Ensure inputSchema has proper MCP format
+                raw_schema = tool.get("inputSchema", {})
+                if not raw_schema or not isinstance(raw_schema, dict) or "type" not in raw_schema:
+                    # Fix empty or malformed schema
+                    input_schema = {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    }
+                else:
+                    input_schema = raw_schema
+
                 tools.append(
                     types.Tool(
                         name=str(tool_name),
                         description=tool.get("description", ""),
-                        inputSchema=tool.get("inputSchema", {}),
-                        annotations=tool.get("annotations", {}),
+                        inputSchema=input_schema,
+                        # Skip annotations for now to avoid serialization issues
+                        # annotations=tool.get("annotations", {}),
                     )
                 )
         return tools
